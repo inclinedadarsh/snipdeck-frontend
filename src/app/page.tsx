@@ -24,6 +24,7 @@ import { rust } from "@codemirror/lang-rust";
 import { sql } from "@codemirror/lang-sql";
 import CodeMirror from "@uiw/react-codemirror";
 import { useState } from "react";
+import { toast } from "sonner";
 
 type LanguageValue =
 	| "html"
@@ -100,6 +101,7 @@ export default function Home() {
 	const [language, setLanguage] = useState<LanguageValue>("txt");
 	const [code, setCode] = useState("");
 	const [commitMessage, setCommitMessage] = useState("Initial Commit");
+	const [loading, setLoading] = useState(false);
 
 	const getLanguageExtension = (lang: LanguageValue) => {
 		switch (lang) {
@@ -126,6 +128,51 @@ export default function Home() {
 				return sql();
 			default:
 				return [];
+		}
+	};
+
+	const handleSubmit = async () => {
+		// Validate required fields
+		if (!code.trim()) {
+			toast.error("Code snippet cannot be empty");
+			return;
+		}
+
+		if (!commitMessage.trim()) {
+			toast.error("Commit message cannot be empty");
+			return;
+		}
+
+		setLoading(true);
+
+		try {
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/snippets`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						...(title.trim() && { title: title.trim() }),
+						language,
+						content: code.trim(),
+						commit_message: commitMessage.trim(),
+					}),
+				},
+			);
+
+			if (!response.ok) {
+				throw new Error("Failed to create snippet");
+			}
+
+			const data = await response.json();
+			toast.success(`Snippet created! Slug: ${data.slug}`);
+		} catch (error) {
+			toast.error("Failed to create snippet. Please try again.");
+			console.error("Error creating snippet:", error);
+		} finally {
+			setLoading(false);
 		}
 	};
 
@@ -214,8 +261,12 @@ export default function Home() {
 								onChange={e => setCommitMessage(e.target.value)}
 							/>
 						</div>
-						<Button className="cursor-pointer">
-							Create snippet!
+						<Button
+							className="cursor-pointer min-w-[300px]"
+							disabled={loading}
+							onClick={handleSubmit}
+						>
+							{loading ? "Creating..." : "Create snippet!"}
 						</Button>
 					</div>
 				</div>
