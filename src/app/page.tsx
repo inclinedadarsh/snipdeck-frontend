@@ -23,6 +23,7 @@ import { python } from "@codemirror/lang-python";
 import { rust } from "@codemirror/lang-rust";
 import { sql } from "@codemirror/lang-sql";
 import CodeMirror from "@uiw/react-codemirror";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -97,6 +98,7 @@ const languages: Language[] = [
 ];
 
 export default function Home() {
+	const router = useRouter();
 	const [title, setTitle] = useState("");
 	const [language, setLanguage] = useState<LanguageValue>("txt");
 	const [code, setCode] = useState("");
@@ -167,7 +169,7 @@ export default function Home() {
 			}
 
 			const data = await response.json();
-			toast.success(`Snippet created! Slug: ${data.slug}`);
+			router.push(`/${data.slug}`);
 		} catch (error) {
 			toast.error("Failed to create snippet. Please try again.");
 			console.error("Error creating snippet:", error);
